@@ -9,14 +9,6 @@ export function AudiencePage() {
     document.title = '投影画面 — PDF Presenter Pacemaker'
   }, [])
 
-  if (!session.isDesktop) {
-    return (
-      <main className="audience-message">
-        <p>投影画面はTauriデスクトップ版で利用できます。</p>
-      </main>
-    )
-  }
-
   if (!session.pdfDocument) {
     return (
       <main className="audience-message" aria-live="polite">

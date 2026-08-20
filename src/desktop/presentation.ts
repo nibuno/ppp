@@ -1,4 +1,4 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { TimerStatus } from '../types'
 
@@ -33,10 +33,6 @@ export const emptyPresentationSnapshot: PresentationSnapshot = {
   revision: 0,
   hasPdf: false,
   fileName: null,
-}
-
-export function isDesktopRuntime(): boolean {
-  return isTauri()
 }
 
 export function mergePresentationSnapshot(

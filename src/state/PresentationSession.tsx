@@ -12,7 +12,6 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { describeDesktopError, getPresentationPdf } from '../desktop/presentation'
 import { useDesktopPresentation } from '../hooks/useDesktopPresentation'
 import { usePdfDocument } from '../hooks/usePdfDocument'
-import { usePresentationTimer } from '../hooks/usePresentationTimer'
 import type { TalkNotesByPage, TimerStatus } from '../types'
 import { parseTalkNotes } from '../utils/parseTalkNotes'
 
@@ -42,7 +41,6 @@ type PresentationSessionValue = {
   remainingSeconds: number
   durationSeconds: number
   timerStatus: TimerStatus
-  isDesktop: boolean
   isPreparing: boolean
   isRestoring: boolean
   operationError: string | null
@@ -69,7 +67,6 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
   const [pdfFile, setPdfFileState] = useState<File | null>(null)
   const [durationMinutes, setDurationMinutes] = useState(10)
   const [talkNotesMarkdown, setTalkNotesMarkdown] = useState(sampleTalkNotes)
-  const [localCurrentPage, setLocalCurrentPage] = useState(1)
   const [isPreparing, setIsPreparing] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
   const [operationError, setOperationError] = useState<string | null>(null)
@@ -78,31 +75,20 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
   const { document: pdfDocument, isLoading: pdfIsLoading, error: pdfError } =
     usePdfDocument(pdfFile)
   const durationSeconds = durationMinutes * 60
-  const localTimer = usePresentationTimer(durationSeconds)
   const desktop = useDesktopPresentation()
   const talkNotesByPage = useMemo(
     () => parseTalkNotes(talkNotesMarkdown),
     [talkNotesMarkdown],
   )
 
-  const desktopHasSession = desktop.enabled && desktop.snapshot.totalPages > 0
   const totalPages = pdfDocument?.numPages ?? desktop.snapshot.totalPages
-  const currentPage = desktopHasSession
-    ? desktop.snapshot.currentPage
-    : localCurrentPage
-  const elapsedSeconds = desktopHasSession
-    ? desktop.snapshot.elapsedSeconds
-    : localTimer.elapsedSeconds
-  const remainingSeconds = desktopHasSession
-    ? desktop.snapshot.remainingSeconds
-    : localTimer.remainingSeconds
-  const timerStatus = desktopHasSession
-    ? desktop.snapshot.timerStatus
-    : localTimer.status
+  const currentPage = desktop.snapshot.currentPage
+  const elapsedSeconds = desktop.snapshot.elapsedSeconds
+  const remainingSeconds = desktop.snapshot.remainingSeconds
+  const timerStatus = desktop.snapshot.timerStatus
 
   useEffect(() => {
     if (
-      !desktop.enabled ||
       !desktop.snapshot.hasPdf ||
       pdfFile ||
       restoreRevisionRef.current === desktop.snapshot.revision
@@ -130,7 +116,6 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
         setIsRestoring(false)
       })
   }, [
-    desktop.enabled,
     desktop.snapshot.durationSeconds,
     desktop.snapshot.fileName,
     desktop.snapshot.hasPdf,
@@ -138,16 +123,9 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
     pdfFile,
   ])
 
-  useEffect(() => {
-    if (!desktop.enabled && pdfDocument) {
-      setLocalCurrentPage(1)
-    }
-  }, [desktop.enabled, pdfDocument])
-
   const setPdfFile = useCallback((file: File | null) => {
     setOperationError(null)
     setPdfFileState(file)
-    setLocalCurrentPage(1)
   }, [])
 
   const prepareAndStart = useCallback(async () => {
@@ -159,12 +137,8 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
     setOperationError(null)
 
     try {
-      if (desktop.enabled) {
-        await desktop.prepare(pdfFile, pdfDocument.numPages, durationSeconds)
-        await desktop.start()
-      } else {
-        localTimer.start()
-      }
+      await desktop.prepare(pdfFile, pdfDocument.numPages, durationSeconds)
+      await desktop.start()
     } catch (error) {
       const message = describeDesktopError(error)
       setOperationError(message)
@@ -172,7 +146,7 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
     } finally {
       setIsPreparing(false)
     }
-  }, [desktop, durationSeconds, localTimer, pdfDocument, pdfFile])
+  }, [desktop, durationSeconds, pdfDocument, pdfFile])
 
   const runDesktopAction = useCallback((action: () => Promise<unknown>) => {
     setOperationError(null)
@@ -184,11 +158,7 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
   const goToPage = useCallback(
     (page: number) => {
       const nextPage = Math.min(Math.max(page, 1), totalPages || 1)
-      if (desktop.enabled) {
-        runDesktopAction(() => desktop.goToPage(nextPage))
-      } else {
-        setLocalCurrentPage(nextPage)
-      }
+      runDesktopAction(() => desktop.goToPage(nextPage))
     },
     [desktop, runDesktopAction, totalPages],
   )
@@ -208,28 +178,16 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
   )
 
   const startTimer = useCallback(() => {
-    if (desktop.enabled) {
-      runDesktopAction(desktop.start)
-    } else {
-      localTimer.start()
-    }
-  }, [desktop, localTimer, runDesktopAction])
+    runDesktopAction(desktop.start)
+  }, [desktop, runDesktopAction])
 
   const pauseTimer = useCallback(() => {
-    if (desktop.enabled) {
-      runDesktopAction(desktop.pause)
-    } else {
-      localTimer.pause()
-    }
-  }, [desktop, localTimer, runDesktopAction])
+    runDesktopAction(desktop.pause)
+  }, [desktop, runDesktopAction])
 
   const resetTimer = useCallback(() => {
-    if (desktop.enabled) {
-      runDesktopAction(desktop.reset)
-    } else {
-      localTimer.reset()
-    }
-  }, [desktop, localTimer, runDesktopAction])
+    runDesktopAction(desktop.reset)
+  }, [desktop, runDesktopAction])
 
   const toggleTimer = useCallback(() => {
     if (timerStatus === 'running') {
@@ -240,29 +198,23 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
   }, [pauseTimer, startTimer, timerStatus])
 
   const openAudience = useCallback(() => {
-    if (desktop.enabled) {
-      runDesktopAction(desktop.openAudience)
-    }
+    runDesktopAction(desktop.openAudience)
   }, [desktop, runDesktopAction])
 
   const returnToSetup = useCallback(async () => {
     setOperationError(null)
 
     try {
-      if (desktop.enabled) {
-        if (timerStatus === 'running') {
-          await desktop.pause()
-        }
-        await desktop.closeAudience()
-      } else if (timerStatus === 'running') {
-        localTimer.pause()
+      if (timerStatus === 'running') {
+        await desktop.pause()
       }
+      await desktop.closeAudience()
     } catch (error) {
       const message = describeDesktopError(error)
       setOperationError(message)
       throw new Error(message)
     }
-  }, [desktop, localTimer, timerStatus])
+  }, [desktop, timerStatus])
 
   const value: PresentationSessionValue = {
     pdfFile,
@@ -276,11 +228,10 @@ export function PresentationSessionProvider({ children }: { children: ReactNode 
     totalPages,
     elapsedSeconds,
     remainingSeconds,
-    durationSeconds: desktopHasSession
+    durationSeconds: desktop.snapshot.totalPages > 0
       ? desktop.snapshot.durationSeconds
       : durationSeconds,
     timerStatus,
-    isDesktop: desktop.enabled,
     isPreparing,
     isRestoring,
     operationError,

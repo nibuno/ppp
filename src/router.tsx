@@ -8,7 +8,6 @@ import {
 import App from './App'
 import { AudiencePage } from './pages/AudiencePage'
 import { PresenterPage } from './pages/PresenterPage'
-import { RehearsalsPage } from './pages/RehearsalsPage'
 import { NotFound, RouteError } from './pages/RouteMessages'
 import { SetupPage } from './pages/SetupPage'
 
@@ -44,18 +43,11 @@ const audienceRoute = createRoute({
   component: AudiencePage,
 })
 
-const rehearsalsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/rehearsals',
-  component: RehearsalsPage,
-})
-
 const routeTree = rootRoute.addChildren([
   indexRoute,
   setupRoute,
   presenterRoute,
   audienceRoute,
-  rehearsalsRoute,
 ])
 
 export const router = createRouter({

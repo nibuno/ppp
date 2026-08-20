@@ -35,9 +35,7 @@ export function SetupPage() {
       />
 
       <div className="setup-status" aria-live="polite">
-        {session.isDesktop && (
-          <p>デスクトップモード: 発表開始後に投影画面を分離できます。</p>
-        )}
+        <p>発表開始後に、スライドだけの投影画面を別ウインドウで開けます。</p>
         {(session.pdfIsLoading || session.isRestoring) && (
           <p>PDFを読み込んでいます…</p>
         )}

@@ -19,7 +19,6 @@ type PresenterLayoutProps = {
   onPauseTimer: () => void
   onResetTimer: () => void
   onToggleFullscreen: () => void
-  canOpenAudience: boolean
   onOpenAudience: () => void
   operationError: string | null
   onReturnToSetup: () => void
@@ -41,7 +40,6 @@ export function PresenterLayout({
   onPauseTimer,
   onResetTimer,
   onToggleFullscreen,
-  canOpenAudience,
   onOpenAudience,
   operationError,
   onReturnToSetup,
@@ -94,15 +92,13 @@ export function PresenterLayout({
             発表準備へ戻る
           </button>
 
-          {canOpenAudience && (
-            <button
-              className="audience-window-button"
-              type="button"
-              onClick={onOpenAudience}
-            >
-              投影画面を開く
-            </button>
-          )}
+          <button
+            className="audience-window-button"
+            type="button"
+            onClick={onOpenAudience}
+          >
+            投影画面を開く
+          </button>
 
           {operationError && (
             <p className="inline-operation-error" role="alert">

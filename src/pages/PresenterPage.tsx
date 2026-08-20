@@ -77,7 +77,6 @@ export function PresenterPage() {
         onPauseTimer={session.pauseTimer}
         onResetTimer={session.resetTimer}
         onToggleFullscreen={toggleFullscreen}
-        canOpenAudience={session.isDesktop}
         onOpenAudience={session.openAudience}
         operationError={session.operationError}
         onReturnToSetup={() => void returnToSetup()}

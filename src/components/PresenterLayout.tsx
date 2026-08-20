@@ -19,6 +19,10 @@ type PresenterLayoutProps = {
   onPauseTimer: () => void
   onResetTimer: () => void
   onToggleFullscreen: () => void
+  canOpenAudience: boolean
+  onOpenAudience: () => void
+  operationError: string | null
+  onReturnToSetup: () => void
   children: ReactNode
 }
 
@@ -37,6 +41,10 @@ export function PresenterLayout({
   onPauseTimer,
   onResetTimer,
   onToggleFullscreen,
+  canOpenAudience,
+  onOpenAudience,
+  operationError,
+  onReturnToSetup,
   children,
 }: PresenterLayoutProps) {
   const timeProgress = durationSeconds > 0 ? elapsedSeconds / durationSeconds : 0
@@ -75,6 +83,32 @@ export function PresenterLayout({
           <button type="button" onClick={onNext} disabled={currentPage >= totalPages}>
             次へ
           </button>
+        </div>
+
+        <div className="presenter-utilities">
+          <button
+            className="secondary-action"
+            type="button"
+            onClick={onReturnToSetup}
+          >
+            発表準備へ戻る
+          </button>
+
+          {canOpenAudience && (
+            <button
+              className="audience-window-button"
+              type="button"
+              onClick={onOpenAudience}
+            >
+              投影画面を開く
+            </button>
+          )}
+
+          {operationError && (
+            <p className="inline-operation-error" role="alert">
+              {operationError}
+            </p>
+          )}
         </div>
 
         <ProgressRace timeProgress={timeProgress} slideProgress={slideProgress} />

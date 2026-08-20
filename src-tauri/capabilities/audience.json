@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "audience",
+  "description": "Read-only core permissions for the projected slide window",
+  "windows": ["audience"],
+  "permissions": ["core:default"]
+}
